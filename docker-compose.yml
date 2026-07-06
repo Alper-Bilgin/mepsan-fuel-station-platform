@@ -1,0 +1,94 @@
+version: '3.8'
+
+networks:
+  mepsan-net:
+    driver: bridge
+
+volumes:
+  mepsan-oracle-data:
+  mepsan-influx-data:
+  mepsan-redis-data:
+  mepsan-rabbitmq-data:
+  mepsan-minio-data:
+
+services:
+  # 1. Oracle Database (İlişkisel Veri ve Finansal İşlemler)
+  mepsan-oracle-db:
+    image: gvenzl/oracle-free:latest
+    container_name: mepsan-oracle-db
+    environment:
+      - ORACLE_PASSWORD=mepsan123
+      - APP_USER=mepsan_admin
+      - APP_USER_PASSWORD=mepsan123
+    ports:
+      - "1521:1521"
+    volumes:
+      - mepsan-oracle-data:/opt/oracle/oradata
+    networks:
+      - mepsan-net
+    restart: unless-stopped
+
+  # 2. InfluxDB (Zaman Serisi ve Telemetri Verileri)
+  mepsan-influx-db:
+    image: influxdb:2.7
+    container_name: mepsan-influx-db
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=mepsan_admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=mepsan12345
+      - DOCKER_INFLUXDB_INIT_ORG=mepsan_hq
+      - DOCKER_INFLUXDB_INIT_BUCKET=telemetry_bucket
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=mepsan-super-secret-token-2026
+    ports:
+      - "8086:8086"
+    volumes:
+      - mepsan-influx-data:/var/lib/influxdb2
+    networks:
+      - mepsan-net
+    restart: unless-stopped
+
+  # 3. Redis (Önbellek, Fiyatlar ve Dağıtık Kilit Mekanizması)
+  mepsan-redis-cache:
+    image: redis:7-alpine
+    container_name: mepsan-redis-cache
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - mepsan-redis-data:/data
+    networks:
+      - mepsan-net
+    restart: unless-stopped
+
+  # 4. RabbitMQ (Olay Güdümlü Mesajlaşma Kuyruğu)
+  mepsan-rabbitmq-broker:
+    image: rabbitmq:3.13-management-alpine
+    container_name: mepsan-rabbitmq-broker
+    environment:
+      - RABBITMQ_DEFAULT_USER=mepsan_mq
+      - RABBITMQ_DEFAULT_PASS=mepsan123
+    ports:
+      - "5672:5672"   # AMQP portu (Spring Boot buraya bağlanacak)
+      - "15672:15672" # Yönetim Paneli portu (Tarayıcıdan izleme)
+    volumes:
+      - mepsan-rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - mepsan-net
+    restart: unless-stopped
+
+  # 5. MinIO (EPDK Yasal Raporları için Nesne Depolama)
+  mepsan-minio-storage:
+    image: minio/minio:latest
+    container_name: mepsan-minio-storage
+    command: server /data --console-address ":9001"
+    environment:
+      - MINIO_ROOT_USER=mepsan_admin
+      - MINIO_ROOT_PASSWORD=mepsan12345
+    ports:
+      - "9000:9000"   # API portu (Spring Boot buraya bağlanacak)
+      - "9001:9001"   # Yönetim Paneli portu
+    volumes:
+      - mepsan-minio-data:/data
+    networks:
+      - mepsan-net
+    restart: unless-stopped
