@@ -1,12 +1,12 @@
 package com.mepsan.iot_simulator_service.generator;
 
 import com.mepsan.iot_simulator_service.config.SimulationContext;
+import com.mepsan.iot_simulator_service.config.SimulatorProperties;
 import com.mepsan.iot_simulator_service.dto.RefillPayload;
 import com.mepsan.iot_simulator_service.dto.SalesPayload;
 import com.mepsan.iot_simulator_service.dto.TelemetryPayload;
 import lombok.RequiredArgsConstructor;
 import net.datafaker.Faker;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -19,10 +19,9 @@ public class DataGenerator {
 
     private final SimulationContext context;
 
-    @Value("${simulator.base-price}")
-    private double basePrice;
+    // YENİ EKLENEN: @Value yerine Properties sınıfını kullanıyoruz
+    private final SimulatorProperties simulatorProperties;
 
-    // Thread-safe Faker ve ID yönetimi
     private final ThreadLocal<Faker> threadLocalFaker = ThreadLocal.withInitial(Faker::new);
     private final AtomicReference<String> lastTransactionId = new AtomicReference<>(UUID.randomUUID().toString());
 
@@ -35,13 +34,15 @@ public class DataGenerator {
         boolean isChaos = faker.number().numberBetween(1, 100) <= 5;
 
         String txnId = UUID.randomUUID().toString();
-        double unitPrice = basePrice;
+
+        // Fiyatı artık doğrudan Map'ten güvenli bir şekilde çekiyoruz
+        double unitPrice = simulatorProperties.getPrices().get(tankInfo.fuelType());
 
         if (isChaos) {
             if (faker.bool().bool()) {
                 unitPrice = 10.00; // Fiyat uyuşmazlığı hatası
             } else {
-                txnId = lastTransactionId.get(); // Idempotency hatası (Mükerrer UUID)
+                txnId = lastTransactionId.get(); // Idempotency hatası
             }
         } else {
             lastTransactionId.set(txnId);
@@ -53,6 +54,7 @@ public class DataGenerator {
         return new SalesPayload(txnId, stationCode, faker.number().numberBetween(1, 8), 1, tankInfo.fuelType(), volume, unitPrice, totalAmount, plate, Instant.now().toString());
     }
 
+    // generateTelemetry() ve generateRefill() metodları mevcut haliyle aynı kalacak...
     public TelemetryPayload generateTelemetry() {
         Faker faker = threadLocalFaker.get();
         String stationCode = context.getRandomStation();
@@ -62,7 +64,6 @@ public class DataGenerator {
         double temp = faker.number().randomDouble(2, 15, 25);
         double water = faker.number().randomDouble(2, 0, 5);
 
-        // Chaos Injection: Su seviyesini eşiğin üstüne çıkar
         if (faker.number().numberBetween(1, 100) <= 5) {
             water = faker.number().randomDouble(2, 30, 50);
         }

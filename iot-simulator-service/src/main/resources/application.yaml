@@ -14,5 +14,8 @@ simulator:
   station-count: 50        # Sabit havuzdaki istasyon sayısı
   sales-rate-ms: 1000      # 1 saniyede bir satış
   telemetry-rate-ms: 2000  # 2 saniyede bir telemetri
-  refill-rate-ms: 60000
-  base-price: 42.10
+  refill-rate-ms: 60000   
+  prices:
+    DIESEL: 42.10
+    GASOLINE: 45.30
+    LPG: 24.80
