@@ -10,6 +10,10 @@ spring:
     password: mepsan123
     driver-class-name: oracle.jdbc.OracleDriver
   jpa:
+    properties:
+      hibernate:
+        jdbc:
+          use_get_generated_keys: false
     hibernate:
       ddl-auto: validate # Tabloları Flyway yönetecek
     show-sql: false

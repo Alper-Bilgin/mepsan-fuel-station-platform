@@ -6,10 +6,14 @@ spring:
     name: sales-service
   datasource:
     url: jdbc:oracle:thin:@localhost:1521/FREEPDB1
-    username: mepsan_admin
+    username: sales_admin
     password: mepsan123
     driver-class-name: oracle.jdbc.OracleDriver
   jpa:
+    properties:
+      hibernate:
+        jdbc:
+          use_get_generated_keys: false
     hibernate:
       ddl-auto: validate
     show-sql: false
@@ -21,9 +25,14 @@ spring:
     port: 5672
     username: mepsan_mq
     password: mepsan123
-  redis:
-    host: localhost
-    port: 6379
+    listener:
+      simple:
+        concurrency: 5        # Aynı anda 5 mesaj işlenebilir
+        max-concurrency: 20   # Yük artarsa 20 thread'e kadar çıkabilir
+  data:
+    redis:
+      host: localhost
+      port: 6379
 
 management:
   endpoints:

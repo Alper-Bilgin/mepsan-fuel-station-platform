@@ -9,7 +9,9 @@ import java.time.Instant;
 @Table(name = "REFILLS")
 @Getter @Setter
 public class Refill {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "refills_seq")
+    @SequenceGenerator(name = "refills_seq", sequenceName = "refills_seq", allocationSize = 1)
     private Long id;
 
     @Column(name = "refill_id", unique = true)
