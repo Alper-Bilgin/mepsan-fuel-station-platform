@@ -1,0 +1,32 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: telemetry-service
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: mepsan_mq
+    password: mepsan123
+    listener:
+      simple:
+        concurrency: 5
+        max-concurrency: 15
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+# InfluxDB Bağlantı Bilgileri (Docker Compose ile birebir uyumlu)
+influx:
+  url: http://localhost:8086
+  token: mepsan-super-secret-token-2026
+  org: mepsan_hq
+  bucket: telemetry_bucket
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
